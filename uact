@@ -1,0 +1,88 @@
+#!/bin/bash
+
+#Title........: uact - Ubuntu Appearance Change Tool
+#Description..: This is bash script for changing the appearance of ubuntu from the command line.
+#Author.......: Rennan Cockles
+#Date.........: 20171018
+#Version......: 1.0
+#Usage........: uact [Options]
+
+
+function usage() {
+  echo "Ubuntu Appearance Change Tool
+
+Usage: uact [Options]
+Options:
+ -w, --workspaces LINES COLUMNS    Vertical and Horizontal number of workspaces.
+ -l, --launcher POSITION           Position of launcher. [Left|Bottom]
+ -i, --icon SIZE                   Size of icons in launcher. Between 16 and 64."
+
+  exit 1
+}
+
+WORK=0
+LAUNCHER=0
+ICON=0
+
+[[ $# -eq 0 ]] && usage
+
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+    -w|--worspaces)
+      [[ ! $2 =~ ^[1-9]$ ]] || [[ ! $3 =~ ^[1-9]$ ]] && usage
+
+      LINES="$2"
+      COLUMNS="$3"
+      WORK=1
+      shift 3
+      ;;
+
+    -l|--launcher)
+      lower_opt="$(echo $2 | tr '[:upper:]' '[:lower:]')"
+
+      if [[ $lower_opt == left ]]; then
+        POSITION='Left'
+      elif [[ $lower_opt == bottom ]]; then
+        POSITION='Bottom'
+      else
+        usage
+      fi
+
+      LAUNCHER=1
+      shift 2
+      ;;
+
+    -i|--icon)
+      [[ $2 -ge 16 ]] && [[ $2 -le 64 ]] || usage
+
+      SIZE="$2"
+      ICON=1
+      shift 2
+      ;;
+
+    *)
+      usage
+      ;;
+  esac
+done
+
+if [[ $WORK -eq 1 ]]; then
+  profile=$(gsettings get org.compiz current-profile | tr -d "'")
+
+  gsettings set org.compiz.core:/org/compiz/profiles/${profile}/plugins/core/ vsize $LINES
+  gsettings set org.compiz.core:/org/compiz/profiles/${profile}/plugins/core/ hsize $COLUMNS
+fi
+
+if [[ $LAUNCHER -eq 1 ]]; then
+  profile=$(gsettings get org.compiz current-profile | tr -d "'")
+
+  gsettings set com.canonical.Unity.Launcher launcher-position $POSITION
+fi
+
+if [[ $ICON -eq 1 ]]; then
+  profile=$(gsettings get org.compiz current-profile | tr -d "'")
+
+  gsettings set org.compiz.unityshell:/org/compiz/profiles/${profile}/plugins/unityshell/ icon-size $SIZE
+fi
